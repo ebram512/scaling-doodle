@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دفتر مقاسات الخياط</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding: 15px; margin: 0; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2, h3 { color: #333; border-bottom: 2px solid #28a745; padding-bottom: 5px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 10px; }
+        
+        /* تصميم شريط البحث */
+        .search-box { background: #e9ecef; padding: 15px; border-radius: 10px; margin-top: 20px; border: 2px solid #28a745; }
+        
+        /* تصميم كارت الزبون */
+        .customer-card { background: #fff; padding: 15px; margin-top: 15px; border-radius: 10px; border-right: 8px solid #28a745; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .customer-card h4 { margin: 0 0 10px 0; color: #28a745; font-size: 20px; }
+        .details { font-size: 15px; line-height: 1.6; color: #555; }
+        .money-status { font-weight: bold; margin-top: 5px; padding: 5px; border-radius: 5px; display: inline-block; }
+        .debt { background: #ffebee; color: #c62828; }
+        .paid-full { background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🧵 تسجيل زبون جديد</h2>
+    <input type="text" id="custName" placeholder="اسم الزبون الكامل">
+    <input type="text" id="jalebiyaType" placeholder="نوع الجلابية (مثلاً: مكففه, مسرفله..)">
+    
+    <h3>📏 المقاسات</h3>
+    <div class="grid-inputs">
+        <input type="number" id="length" placeholder="الطول">
+        <input type="number" id="chest" placeholder="الصدر">
+        <input type="number" id="shoulder" placeholder="الكتف">
+        <input type="number" id="sleeve" placeholder="الكم">
+        <input type="number" id="neck" placeholder="الرقبة">
+    </div>
+    
+    <h3>💰 الحساب</h3>
+    <div class="grid-inputs">
+        <input type="number" id="totalPrice" placeholder="الإجمالي">
+        <input type="number" id="paidAmount" placeholder="المدفوع">
+    </div>
+    
+    <button onclick="saveData()">✅ حفظ البيانات</button>
+
+    <div class="search-box">
+        <label>🔍 ابحث عن زبون:</label>
+        <input type="text" id="searchInput" onkeyup="searchCustomers()" placeholder="اكتب اسم الزبون هنا...">
+    </div>
+
+    <div id="displayArea"></div>
+</div>
+
+<script>
+    // دالة الحفظ
+    function saveData() {
+        const name = document.getElementById('custName').value;
+        if(!name) { alert("من فضلك اكتب اسم الزبون"); return; }
+
+        const customer = {
+            name: name,
+            type: document.getElementById('jalebiyaType').value,
+            l: document.getElementById('length').value,
+            c: document.getElementById('chest').value,
+            s: document.getElementById('shoulder').value,
+            sl: document.getElementById('sleeve').value,
+            n: document.getElementById('neck').value,
+            total: Number(document.getElementById('totalPrice').value),
+            paid: Number(document.getElementById('paidAmount').value)
+        };
+
+        let customers = JSON.parse(localStorage.getItem('tailorData')) || [];
+        customers.push(customer);
+        localStorage.setItem('tailorData', JSON.stringify(customers));
+        
+        alert("تم حفظ بيانات " + name);
+        location.reload(); 
+    }
+
+    // دالة البحث والعرض
+    function searchCustomers() {
+        let input = document.getElementById('searchInput').value.toLowerCase();
+        let customers = JSON.parse(localStorage.getItem('tailorData')) || [];
+        let displayArea = document.getElementById('displayArea');
+        
+        let filtered = customers.filter(c => c.name.toLowerCase().includes(input));
+        
+        let html = "";
+        filtered.forEach((c) => {
+            let remain = c.total - c.paid;
+            let statusClass = remain > 0 ? "debt" : "paid-full";
+            let statusText = remain > 0 ? `باقي عليه: ${remain} ج.م` : "خالص الحساب ✅";
+
+            html += `
+            <div class="customer-card">
+                <h4>👤 ${c.name}</h4>
+                <div class="details">
+                    <b>المقاسات:</b> طول(${c.l}) | صدر(${c.c}) | كتف(${c.s}) | كم(${c.sl}) | رقبة(${c.n})<br>
+                    <b>النوع:</b> ${c.type} <br>
+                    <div class="money-status ${statusClass}">${statusText}</div>
+                </div>
+            </div>`;
+        });
+        displayArea.innerHTML = html;
+    }
+
+    // عرض الكل عند تحميل الصفحة
+    window.onload = searchCustomers;
+</script>
+
+</body>
+</html>

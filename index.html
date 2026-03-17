@@ -3,33 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دفتر مقاسات الخياط</title>
+    <title>دفتر مقاسات الخياط </title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding: 15px; margin: 0; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2, h3 { color: #333; border-bottom: 2px solid #28a745; padding-bottom: 5px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 10px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; }
         
-        /* تصميم شريط البحث */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .login-box { background: white; padding: 30px; border-radius: 15px; text-align: center; width: 85%; max-width: 350px; }
+        
+        h2, h3 { color: #333; border-bottom: 2px solid #28a745; padding-bottom: 5px; margin-top: 20px; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        .main-btn { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 10px; }
+        .main-btn:hover { background: #218838; }
+
         .search-box { background: #e9ecef; padding: 15px; border-radius: 10px; margin-top: 20px; border: 2px solid #28a745; }
         
-        /* تصميم كارت الزبون */
-        .customer-card { background: #fff; padding: 15px; margin-top: 15px; border-radius: 10px; border-right: 8px solid #28a745; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .customer-card { background: #fff; padding: 15px; margin-top: 15px; border-radius: 10px; border-right: 8px solid #28a745; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; }
         .customer-card h4 { margin: 0 0 10px 0; color: #28a745; font-size: 20px; }
         .details { font-size: 15px; line-height: 1.6; color: #555; }
-        .money-status { font-weight: bold; margin-top: 5px; padding: 5px; border-radius: 5px; display: inline-block; }
+        
+        .notes-area { background: #fff8e1; border-right: 3px solid #ffc107; padding: 8px; margin-top: 10px; font-style: italic; font-size: 14px; border-radius: 4px; }
+        
+        .money-status { font-weight: bold; margin-top: 5px; padding: 5px 10px; border-radius: 5px; display: inline-block; font-size: 14px; }
         .debt { background: #ffebee; color: #c62828; }
         .paid-full { background: #e8f5e9; color: #2e7d32; }
+
+        .card-actions { display: flex; gap: 10px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .btn-action { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-edit { background: #ffc107; color: #000; }
+        .btn-delete { background: #dc3545; color: #fff; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="loginOverlay">
+    <div class="login-box">
+        <h2 style="border:none">🔐 دخول آمن</h2>
+        <p>ادخل كلمة السر لفتح الدفتر</p>
+        <input type="password" id="passInput" placeholder="كلمة السر">
+        <button class="main-btn" onclick="checkPassword()">دخول</button>
+        <p id="errorMsg" style="color: red; display: none; margin-top: 10px;">كلمة السر غلط!</p>
+    </div>
+</div>
+
+<div class="container" id="mainApp">
     <h2>🧵 تسجيل زبون جديد</h2>
+    <input type="hidden" id="editIndex" value="-1">
+    
     <input type="text" id="custName" placeholder="اسم الزبون الكامل">
-    <input type="text" id="jalebiyaType" placeholder="نوع الجلابية (مثلاً: مكففه, مسرفله..)">
+    <input type="text" id="jalebiyaType" placeholder="نوع الجلابية (مثلاً: سعودي، مصري..)">
     
     <h3>📏 المقاسات</h3>
     <div class="grid-inputs">
@@ -40,13 +64,14 @@
         <input type="number" id="neck" placeholder="الرقبة">
     </div>
     
-    <h3>💰 الحساب</h3>
+    <h3>💰 الحساب والملاحظات</h3>
     <div class="grid-inputs">
         <input type="number" id="totalPrice" placeholder="الإجمالي">
         <input type="number" id="paidAmount" placeholder="المدفوع">
     </div>
+    <textarea id="notes" rows="2" placeholder="اكتب ملاحظات إضافية هنا (مثلاً: ميعاد التسليم، شكل الياقة...)"></textarea>
     
-    <button onclick="saveData()">✅ حفظ البيانات</button>
+    <button class="main-btn" id="submitBtn" onclick="saveData()">✅ حفظ البيانات</button>
 
     <div class="search-box">
         <label>🔍 ابحث عن زبون:</label>
@@ -57,9 +82,32 @@
 </div>
 
 <script>
-    // دالة الحفظ
+    const APP_PASSWORD = "ESG+M7"; 
+
+    window.onload = function() {
+        if (localStorage.getItem('isTailorAuth') === 'true') { unlockApp(); }
+    }
+
+    function checkPassword() {
+        const pass = document.getElementById('passInput').value;
+        if (pass === APP_PASSWORD) {
+            localStorage.setItem('isTailorAuth', 'true');
+            unlockApp();
+        } else { document.getElementById('errorMsg').style.display = 'block'; }
+    }
+
+    function unlockApp() {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        searchCustomers();
+    }
+
+    let customers = JSON.parse(localStorage.getItem('tailorData')) || [];
+
     function saveData() {
         const name = document.getElementById('custName').value;
+        const editIndex = parseInt(document.getElementById('editIndex').value);
+        
         if(!name) { alert("من فضلك اكتب اسم الزبون"); return; }
 
         const customer = {
@@ -71,46 +119,95 @@
             sl: document.getElementById('sleeve').value,
             n: document.getElementById('neck').value,
             total: Number(document.getElementById('totalPrice').value),
-            paid: Number(document.getElementById('paidAmount').value)
+            paid: Number(document.getElementById('paidAmount').value),
+            notes: document.getElementById('notes').value
         };
 
-        let customers = JSON.parse(localStorage.getItem('tailorData')) || [];
-        customers.push(customer);
+        if (editIndex === -1) { customers.push(customer); } 
+        else {
+            customers[editIndex] = customer;
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('submitBtn').innerText = "✅ حفظ البيانات";
+            document.getElementById('submitBtn').style.background = "#28a745";
+        }
+
         localStorage.setItem('tailorData', JSON.stringify(customers));
-        
-        alert("تم حفظ بيانات " + name);
-        location.reload(); 
+        resetForm();
+        searchCustomers();
+        alert("تم الحفظ بنجاح!");
     }
 
-    // دالة البحث والعرض
     function searchCustomers() {
         let input = document.getElementById('searchInput').value.toLowerCase();
-        let customers = JSON.parse(localStorage.getItem('tailorData')) || [];
         let displayArea = document.getElementById('displayArea');
-        
-        let filtered = customers.filter(c => c.name.toLowerCase().includes(input));
-        
         let html = "";
-        filtered.forEach((c) => {
-            let remain = c.total - c.paid;
-            let statusClass = remain > 0 ? "debt" : "paid-full";
-            let statusText = remain > 0 ? `باقي عليه: ${remain} ج.م` : "خالص الحساب ✅";
+        
+        customers.forEach((c, index) => {
+            if (c.name.toLowerCase().includes(input)) {
+                let remain = c.total - c.paid;
+                let statusClass = remain > 0 ? "debt" : "paid-full";
+                let statusText = remain > 0 ? `باقي عليه: ${remain} ج.م` : "خالص الحساب ✅";
+                let notesHtml = c.notes ? `<div class="notes-area"><b>📝 ملاحظة:</b> ${c.notes}</div>` : "";
 
-            html += `
-            <div class="customer-card">
-                <h4>👤 ${c.name}</h4>
-                <div class="details">
-                    <b>المقاسات:</b> طول(${c.l}) | صدر(${c.c}) | كتف(${c.s}) | كم(${c.sl}) | رقبة(${c.n})<br>
-                    <b>النوع:</b> ${c.type} <br>
-                    <div class="money-status ${statusClass}">${statusText}</div>
-                </div>
-            </div>`;
+                html += `
+                <div class="customer-card">
+                    <h4>👤 ${c.name}</h4>
+                    <div class="details">
+                        <b>المقاسات:</b> ط(${c.l}) | ص(${c.c}) | ك(${c.s}) | كم(${c.sl}) | ر(${c.n})<br>
+                        <b>النوع:</b> ${c.type} <br>
+                        <div class="money-status ${statusClass}">${statusText}</div>
+                        ${notesHtml}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-action btn-edit" onclick="editCustomer(${index})">تعديل ✏️</button>
+                        <button class="btn-action btn-delete" onclick="deleteCustomer(${index})">حذف 🗑️</button>
+                    </div>
+                </div>`;
+            }
         });
         displayArea.innerHTML = html;
     }
 
-    // عرض الكل عند تحميل الصفحة
-    window.onload = searchCustomers;
+    function deleteCustomer(index) {
+        if (confirm("هل أنت متأكد من حذف بيانات " + customers[index].name + "؟")) {
+            customers.splice(index, 1);
+            localStorage.setItem('tailorData', JSON.stringify(customers));
+            searchCustomers();
+        }
+    }
+
+    function editCustomer(index) {
+        const c = customers[index];
+        document.getElementById('editIndex').value = index;
+        document.getElementById('custName').value = c.name;
+        document.getElementById('jalebiyaType').value = c.type;
+        document.getElementById('length').value = c.l;
+        document.getElementById('chest').value = c.c;
+        document.getElementById('shoulder').value = c.s;
+        document.getElementById('sleeve').value = c.sl;
+        document.getElementById('neck').value = c.n;
+        document.getElementById('totalPrice').value = c.total;
+        document.getElementById('paidAmount').value = c.paid;
+        document.getElementById('notes').value = c.notes || "";
+
+        document.getElementById('submitBtn').innerText = "🔄 تحديث البيانات";
+        document.getElementById('submitBtn').style.background = "#ffc107";
+        document.getElementById('submitBtn').style.color = "black";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        document.getElementById('custName').value = "";
+        document.getElementById('jalebiyaType').value = "";
+        document.getElementById('length').value = "";
+        document.getElementById('chest').value = "";
+        document.getElementById('shoulder').value = "";
+        document.getElementById('sleeve').value = "";
+        document.getElementById('neck').value = "";
+        document.getElementById('totalPrice').value = "";
+        document.getElementById('paidAmount').value = "";
+        document.getElementById('notes').value = "";
+    }
 </script>
 
 </body>
